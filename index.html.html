@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Inspection Log">
+<meta name="theme-color" content="#0a0f1e">
+<title>Inspection Logger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2436;
+    --border: #1e3a5f;
+    --accent: #00aaff;
+    --accent2: #00ff88;
+    --warn: #ff6b35;
+    --text: #e8f4fd;
+    --muted: #6b8aad;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0d1b2e 0%, #0a1628 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .app-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .app-subtitle {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .total-badge {
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* Nav tabs */
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .nav-tab {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 8px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .nav-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+
+  /* Panels */
+  .panel { display: none; padding: 16px; }
+  .panel.active { display: block; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,170,255,0.03) 0%, transparent 60%);
+  }
+
+  .upload-zone:active {
+    border-color: var(--accent);
+    background: rgba(0,170,255,0.05);
+  }
+
+  .upload-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  .upload-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .upload-sub {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  #fileInput { display: none; }
+
+  /* Client field */
+  .field-group {
+    margin-top: 14px;
+  }
+
+  .field-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .field-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field-input:focus { border-color: var(--accent); }
+
+  /* Image preview list */
+  .image-queue {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .image-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .image-item img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .image-item-info { flex: 1; min-width: 0; }
+  .image-item-name { color: var(--text); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .image-item-status { font-size: 10px; margin-top: 3px; }
+  .status-pending { color: var(--muted); }
+  .status-processing { color: var(--accent); }
+  .status-done { color: var(--accent2); }
+  .status-error { color: var(--warn); }
+
+  .image-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  /* Process button */
+  .btn-process {
+    width: 100%;
+    margin-top: 16px;
+    background: linear-gradient(135deg, var(--accent) 0%, #0077cc 100%);
+    border: none;
+    border-radius: var(--radius);
+    color: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 2px;
+    padding: 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity 0.2s;
+  }
+
+  .btn-process:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-process:active:not(:disabled) { opacity: 0.8; }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-top: 12px;
+    display: none;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+
+  .progress-text {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* Results panel */
+  .session-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .session-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .session-date {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .session-count {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .session-body { padding: 12px 14px; }
+
+  .reg-list {
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .reg-tag {
+    display: inline-block;
+    background: rgba(0,170,255,0.1);
+    border: 1px solid rgba(0,170,255,0.2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: 2px;
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  .session-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .btn-small {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn-small:active { border-color: var(--accent); color: var(--accent); }
+
+  /* History panel */
+  .history-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .history-item:active { border-color: var(--accent); }
+
+  .history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .history-item-date {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+  }
+
+  .history-item-meta {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .history-item-preview {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-delete {
+    background: none;
+    border: none;
+    color: var(--warn);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 6px;
+    opacity: 0.6;
+  }
+
+  /* Export panel */
+  .export-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .export-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .export-desc {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    line-height: 1.6;
+  }
+
+  .export-preview {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 11px;
+    color: var(--accent2);
+    line-height: 1.8;
+    margin-bottom: 12px;
+    max-height: 160px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .btn-export {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 1px;
+    padding: 12px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-export:active { border-color: var(--accent2); color: var(--accent2); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent2);
+    color: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* API key setup */
+  .setup-card {
+    background: var(--surface);
+    border: 1px solid var(--warn);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .setup-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--warn);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .setup-text {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .btn-save-key {
+    background: var(--warn);
+    border: none;
+    border-radius: 8px;
+    color: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 10px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  /* Scanning animation */
+  @keyframes scan {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 0% 100%; }
+  }
+
+  .scanning {
+    border-color: var(--accent) !important;
+    position: relative;
+  }
+
+  .scanning::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+    animation: scanLine 1s linear infinite;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  @keyframes scanLine {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">⚡ Insp. Logger</div>
+      <div class="app-subtitle">MANHEIM · TOYOTA NZ</div>
+    </div>
+    <div class="total-badge" id="totalBadge">0 VEH</div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('scan')">SCAN</button>
+    <button class="nav-tab" onclick="switchTab('results')">RESULTS</button>
+    <button class="nav-tab" onclick="switchTab('history')">HISTORY</button>
+    <button class="nav-tab" onclick="switchTab('export')">EXPORT</button>
+  </div>
+</div>
+
+<!-- SCAN PANEL -->
+<div class="panel active" id="panel-scan">
+
+  <!-- API Key setup -->
+  <div class="setup-card" id="apiKeySetup">
+    <div class="setup-title">⚙ API KEY REQUIRED</div>
+    <div class="setup-text">Enter your Anthropic API key to enable image scanning. Stored locally on your device only.</div>
+    <div class="field-label">Anthropic API Key</div>
+    <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-...">
+    <button class="btn-save-key" onclick="saveApiKey()">SAVE KEY</button>
+  </div>
+
+  <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-icon">📷</div>
+    <div class="upload-title">ADD PHOTOS</div>
+    <div class="upload-sub">Tap to select multiple inspection<br>summary screenshots at once</div>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFiles(this.files)">
+
+  <div class="field-group">
+    <div class="field-label">Client Name</div>
+    <input type="text" class="field-input" id="clientInput" value="Toyota New Zealand" placeholder="Client name">
+  </div>
+
+  <div class="image-queue" id="imageQueue"></div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">Processing...</div>
+  </div>
+
+  <button class="btn-process" id="processBtn" onclick="processImages()" disabled>
+    EXTRACT REGISTRATIONS
+  </button>
+</div>
+
+<!-- RESULTS PANEL -->
+<div class="panel" id="panel-results">
+  <div id="resultsContainer">
+    <div class="no-results">
+      📋<br><br>No results yet.<br>Scan some images first.
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY PANEL -->
+<div class="panel" id="panel-history">
+  <div id="historyContainer">
+    <div class="history-empty">
+      🗂<br><br>No saved sessions yet.<br>Processed sessions are<br>saved here automatically.
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT PANEL -->
+<div class="panel" id="panel-export">
+  <div id="exportContainer">
+    <div class="no-results">
+      📤<br><br>No data to export yet.<br>Scan images to get started.
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let pendingFiles = [];
+let currentResults = {}; // { 'DD/MM/YYYY': ['REG1', 'REG2', ...] }
+let apiKey = localStorage.getItem('anthropic_api_key') || '';
+
+// ── Init ───────────────────────────────────────────────
+function init() {
+  if (apiKey) {
+    document.getElementById('apiKeySetup').style.display = 'none';
+    document.getElementById('apiKeyInput').value = apiKey;
+  }
+  renderHistory();
+  updateTotalBadge();
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-')) { showToast('Invalid key format'); return; }
+  apiKey = key;
+  localStorage.setItem('anthropic_api_key', key);
+  document.getElementById('apiKeySetup').style.display = 'none';
+  showToast('API KEY SAVED');
+}
+
+// ── Tab switching ──────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'export') renderExport();
+  if (tab === 'history') renderHistory();
+}
+
+// ── File handling ──────────────────────────────────────
+function handleFiles(files) {
+  for (const file of files) {
+    if (!pendingFiles.find(f => f.name === file.name && f.size === file.size)) {
+      pendingFiles.push(file);
+    }
+  }
+  renderQueue();
+  document.getElementById('processBtn').disabled = pendingFiles.length === 0 || !apiKey;
+}
+
+function renderQueue() {
+  const queue = document.getElementById('imageQueue');
+  queue.innerHTML = '';
+  pendingFiles.forEach((file, idx) => {
+    const url = URL.createObjectURL(file);
+    queue.innerHTML += `
+      <div class="image-item" id="imgItem-${idx}">
+        <img src="${url}" alt="">
+        <div class="image-item-info">
+          <div class="image-item-name">${file.name}</div>
+          <div class="image-item-status status-pending" id="imgStatus-${idx}">● READY</div>
+        </div>
+        <button class="image-remove" onclick="removeFile(${idx})">✕</button>
+      </div>`;
+  });
+}
+
+function removeFile(idx) {
+  pendingFiles.splice(idx, 1);
+  renderQueue();
+  document.getElementById('processBtn').disabled = pendingFiles.length === 0;
+}
+
+// ── Processing ─────────────────────────────────────────
+async function processImages() {
+  if (!apiKey) { showToast('Add API key first'); return; }
+  if (pendingFiles.length === 0) return;
+
+  const btn = document.getElementById('processBtn');
+  btn.disabled = true;
+  btn.textContent = 'PROCESSING...';
+
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  progressWrap.style.display = 'block';
+
+  const client = document.getElementById('clientInput').value.trim() || 'Toyota New Zealand';
+  const batchResults = {}; // date -> [regs]
+
+  for (let i = 0; i < pendingFiles.length; i++) {
+    const file = pendingFiles[i];
+    const pct = Math.round(((i) / pendingFiles.length) * 100);
+    progressFill.style.width = pct + '%';
+    progressText.textContent = `Scanning ${i+1} of ${pendingFiles.length}...`;
+
+    const statusEl = document.getElementById(`imgStatus-${i}`);
+    const itemEl = document.getElementById(`imgItem-${i}`);
+    statusEl.className = 'image-item-status status-processing';
+    statusEl.textContent = '◉ SCANNING...';
+    itemEl.classList.add('scanning');
+
+    try {
+      const base64 = await fileToBase64(file);
+      const extracted = await extractFromImage(base64, file.type);
+
+      // Merge into batchResults
+      for (const [date, regs] of Object.entries(extracted)) {
+        if (!batchResults[date]) batchResults[date] = [];
+        regs.forEach(r => {
+          if (!batchResults[date].includes(r)) batchResults[date].push(r);
+        });
+      }
+
+      const count = Object.values(extracted).flat().length;
+      statusEl.className = 'image-item-status status-done';
+      statusEl.textContent = `✓ ${count} FOUND`;
+      itemEl.classList.remove('scanning');
+    } catch (err) {
+      statusEl.className = 'image-item-status status-error';
+      statusEl.textContent = '✕ ERROR';
+      itemEl.classList.remove('scanning');
+      console.error(err);
+    }
+  }
+
+  progressFill.style.width = '100%';
+  progressText.textContent = 'Complete!';
+
+  // Merge into currentResults
+  for (const [date, regs] of Object.entries(batchResults)) {
+    if (!currentResults[date]) currentResults[date] = [];
+    regs.forEach(r => {
+      if (!currentResults[date].includes(r)) currentResults[date].push(r);
+    });
+  }
+
+  // Save session to history
+  saveSession(client, batchResults);
+
+  renderResults();
+  updateTotalBadge();
+
+  btn.textContent = 'EXTRACT REGISTRATIONS';
+  btn.disabled = false;
+  pendingFiles = [];
+  renderQueue();
+
+  showToast('EXTRACTION COMPLETE');
+  switchTabDirect('results');
+}
+
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function extractFromImage(base64, mimeType) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: 'claude-opus-4-5',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } },
+          { type: 'text', text: `Extract all vehicle registration plates and their inspection dates from this image. Return ONLY valid JSON, no markdown, no explanation. Format: {"DD/MM/YYYY": ["REG1","REG2",...], ...}. Dates must be in DD/MM/YYYY format. Registration plates are alphanumeric codes like QFH831, RKZ506, etc. If multiple dates appear, group registrations under their correct date.` }
+        ]
+      }]
+    })
+  });
+
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  const data = await response.json();
+  const text = data.content[0].text.trim();
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+// ── Render results ─────────────────────────────────────
+function renderResults() {
+  const container = document.getElementById('resultsContainer');
+  const dates = Object.keys(currentResults).sort((a, b) => {
+    return parseDate(a) - parseDate(b);
+  });
+
+  if (dates.length === 0) {
+    container.innerHTML = '<div class="no-results">📋<br><br>No results yet.<br>Scan some images first.</div>';
+    return;
+  }
+
+  container.innerHTML = dates.map(date => {
+    const regs = currentResults[date];
+    const dayName = getDayName(date);
+    return `
+      <div class="session-card">
+        <div class="session-header">
+          <div class="session-date">${dayName} ${formatDateShort(date)}</div>
+          <div class="session-count">${regs.length} vehicles</div>
+        </div>
+        <div class="session-body">
+          <div class="reg-list">
+            ${regs.map(r => `<span class="reg-tag">${r}</span>`).join('')}
+          </div>
+          <div class="session-actions">
+            <button class="btn-small" onclick="copyTextFormat('${date}')">📋 COPY TEXT</button>
+            <button class="btn-small" onclick="copyCSVDate('${date}')">📊 COPY CSV</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── History ────────────────────────────────────────────
+function saveSession(client, results) {
+  const sessions = JSON.parse(localStorage.getItem('inspection_sessions') || '[]');
+  const session = {
+    id: Date.now(),
+    client,
+    timestamp: new Date().toISOString(),
+    results
+  };
+  sessions.unshift(session);
+  localStorage.setItem('inspection_sessions', JSON.stringify(sessions));
+}
+
+function renderHistory() {
+  const sessions = JSON.parse(localStorage.getItem('inspection_sessions') || '[]');
+  const container = document.getElementById('historyContainer');
+
+  if (sessions.length === 0) {
+    container.innerHTML = '<div class="history-empty">🗂<br><br>No saved sessions yet.<br>Processed sessions are<br>saved here automatically.</div>';
+    return;
+  }
+
+  container.innerHTML = sessions.map(s => {
+    const total = Object.values(s.results).flat().length;
+    const dates = Object.keys(s.results).sort((a,b) => parseDate(a)-parseDate(b));
+    const preview = dates.map(d => `${formatDateShort(d)}: ${s.results[d].join('-')}`).join(' | ');
+    const ts = new Date(s.timestamp).toLocaleDateString('en-NZ', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `
+      <div class="history-item" onclick="loadSession(${s.id})">
+        <div class="history-item-header">
+          <div>
+            <div class="history-item-date">${s.client}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${total} vehicles · ${dates.length} day(s)</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <div class="history-item-meta">${ts}</div>
+            <button class="history-delete" onclick="event.stopPropagation();deleteSession(${s.id})">🗑</button>
+          </div>
+        </div>
+        <div class="history-item-preview">${preview}</div>
+      </div>`;
+  }).join('');
+}
+
+function loadSession(id) {
+  const sessions = JSON.parse(localStorage.getItem('inspection_sessions') || '[]');
+  const s = sessions.find(s => s.id === id);
+  if (!s) return;
+  currentResults = {};
+  for (const [date, regs] of Object.entries(s.results)) {
+    currentResults[date] = [...regs];
+  }
+  updateTotalBadge();
+  renderResults();
+  showToast('SESSION LOADED');
+  switchTabDirect('results');
+}
+
+function deleteSession(id) {
+  const sessions = JSON.parse(localStorage.getItem('inspection_sessions') || '[]');
+  const filtered = sessions.filter(s => s.id !== id);
+  localStorage.setItem('inspection_sessions', JSON.stringify(filtered));
+  renderHistory();
+  showToast('SESSION DELETED');
+}
+
+// ── Export ─────────────────────────────────────────────
+function renderExport() {
+  const container = document.getElementById('exportContainer');
+  const dates = Object.keys(currentResults).sort((a,b) => parseDate(a)-parseDate(b));
+
+  if (dates.length === 0) {
+    container.innerHTML = '<div class="no-results">📤<br><br>No data to export yet.<br>Scan images to get started.</div>';
+    return;
+  }
+
+  // Text format preview
+  const textOutput = dates.map(date => {
+    const regs = currentResults[date];
+    return `${getDayName(date)} ${formatDateShort(date)}\n${regs.join('-')}.`;
+  }).join('\n\n');
+
+  // CSV preview
+  const client = document.getElementById('clientInput').value.trim() || 'Toyota New Zealand';
+  const csvRows = ['Date,Registration,Client'];
+  dates.forEach(date => {
+    currentResults[date].forEach(reg => {
+      csvRows.push(`${date},${reg},${client}`);
+    });
+  });
+  const csvOutput = csvRows.join('\n');
+
+  container.innerHTML = `
+    <div class="export-section">
+      <div class="export-title">📋 TEXT FORMAT</div>
+      <div class="export-desc">Grouped by day, registrations separated by dashes — same format as your existing lists.</div>
+      <div class="export-preview">${textOutput}</div>
+      <button class="btn-export" onclick="copyToClipboard(\`${textOutput.replace(/`/g,"'")}\`)">📋 COPY TO CLIPBOARD</button>
+      <button class="btn-export" style="margin-top:8px" onclick="downloadFile('inspections_text.txt', \`${textOutput.replace(/`/g,"'")}\`)">⬇ DOWNLOAD TXT</button>
+    </div>
+    <div class="export-section">
+      <div class="export-title">📊 CSV / SPREADSHEET</div>
+      <div class="export-desc">Date, Registration, Client columns — paste directly into Google Sheets.</div>
+      <div class="export-preview">${csvOutput}</div>
+      <button class="btn-export" onclick="copyToClipboard(\`${csvOutput.replace(/`/g,"'")}\`)">📋 COPY CSV</button>
+      <button class="btn-export" style="margin-top:8px" onclick="downloadFile('inspections.csv', \`${csvOutput.replace(/`/g,"'")}\`)">⬇ DOWNLOAD CSV</button>
+    </div>`;
+}
+
+// ── Copy / Download ────────────────────────────────────
+function copyTextFormat(date) {
+  const regs = currentResults[date];
+  const text = `${getDayName(date)} ${formatDateShort(date)}\n${regs.join('-')}.`;
+  copyToClipboard(text);
+}
+
+function copyCSVDate(date) {
+  const client = document.getElementById('clientInput').value.trim() || 'Toyota New Zealand';
+  const rows = ['Date,Registration,Client'];
+  currentResults[date].forEach(r => rows.push(`${date},${r},${client}`));
+  copyToClipboard(rows.join('\n'));
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('COPIED!')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('COPIED!');
+  });
+}
+
+function downloadFile(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('DOWNLOADING...');
+}
+
+// ── Helpers ────────────────────────────────────────────
+function parseDate(str) {
+  const [d, m, y] = str.split('/');
+  return new Date(y, m-1, d);
+}
+
+function getDayName(dateStr) {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return days[parseDate(dateStr).getDay()];
+}
+
+function formatDateShort(dateStr) {
+  const [d, m] = dateStr.split('/');
+  return `${parseInt(d)}/${parseInt(m)}`;
+}
+
+function updateTotalBadge() {
+  const total = Object.values(currentResults).flat().length;
+  document.getElementById('totalBadge').textContent = `${total} VEH`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function switchTabDirect(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  const tabs = ['scan','results','history','export'];
+  const idx = tabs.indexOf(tab);
+  document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+}
+
+init();
+</script>
+</body>
+</html>
