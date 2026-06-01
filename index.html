@@ -964,10 +964,10 @@ function renderExport() {
 
   // CSV preview
   const client = document.getElementById('clientInput').value.trim() || 'Toyota New Zealand';
-  const csvRows = ['Date,Registration,Client'];
+  const csvRows = ['Date\tRegistration\tClient'];
   dates.forEach(date => {
     currentResults[date].forEach(reg => {
-      csvRows.push(`${date},${reg},${client}`);
+      csvRows.push(`${date}\t${reg}\t${client}`);
     });
   });
   const csvOutput = csvRows.join('\n');
@@ -998,8 +998,8 @@ function copyTextFormat(date) {
 
 function copyCSVDate(date) {
   const client = document.getElementById('clientInput').value.trim() || 'Toyota New Zealand';
-  const rows = ['Date,Registration,Client'];
-  currentResults[date].forEach(r => rows.push(`${date},${r},${client}`));
+  const rows = ['Date\tRegistration\tClient'];
+  currentResults[date].forEach(r => rows.push(`${date}\t${r}\t${client}`));
   copyToClipboard(rows.join('\n'));
 }
 
